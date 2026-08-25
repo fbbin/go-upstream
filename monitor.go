@@ -9,7 +9,9 @@ import (
 func statsHandler(w http.ResponseWriter, r *http.Request) {
 	_str := ""
 	for _, v := range BackendSvrs {
+		v.mu.RLock()
 		_str += fmt.Sprintf("Server:%s FailTimes:%d isUp:%t\n", v.identify, v.failTimes, v.isLive)
+		v.mu.RUnlock()
 	}
 	fmt.Fprintf(w, "%s", _str)
 }

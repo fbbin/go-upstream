@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"net"
+	"sync"
 	"time"
 
 	"stathat.com/c/consistent"
@@ -10,7 +11,9 @@ import (
 
 // 代理服务的结构
 type BackendSvr struct {
-	identify  string
+	identify string
+	// The mutex guards the fields following it.
+	mu        sync.RWMutex
 	isLive    bool // 服务是否存活
 	failTimes int
 }
@@ -50,8 +53,13 @@ func checkBackendSvrs() {
 	ticker := time.Tick(time.Duration(10) * time.Second)
 	for _ = range ticker {
 		for _, server := range BackendSvrs {
-			if server.failTimes >= Config.FailOver && server.isLive == true {
+			server.mu.Lock()
+			shouldRemove := server.failTimes >= Config.FailOver && server.isLive
+			if shouldRemove {
 				server.isLive = false
+			}
+			server.mu.Unlock()
+			if shouldRemove {
 				Consisthash.Remove(server.identify)
 			}
 		}
