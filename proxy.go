@@ -59,7 +59,9 @@ func handleConn(conn net.Conn) {
 	remote, err := net.Dial("tcp", proxySvr.identify)
 	if err != nil {
 		Log.Error(err)
+		proxySvr.mu.Lock()
 		proxySvr.failTimes++
+		proxySvr.mu.Unlock()
 		return
 	}
 	// 等待双向连接完成
